@@ -501,8 +501,13 @@ Panel {
           // three framed glyphs sit on one line down the panel.
           Item {
             id: settingsBox
+            // Two pixels in from the card corner: the card's own rounded corner
+            // clips a frame that sits exactly on it, and the frame then reads as
+            // a shape with one corner cut. Inside the corner it stays a square.
             anchors.right: parent.right
             anchors.top: parent.top
+            anchors.rightMargin: Style.spacing.xxs
+            anchors.topMargin: Style.spacing.xxs
             width: root.fieldHeight
             height: root.fieldHeight
 
