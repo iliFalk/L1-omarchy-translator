@@ -65,19 +65,11 @@ Panel {
   readonly property int pad: Style.spacing.popupPadding
   readonly property int rowGap: Style.spacing.panelGap
   readonly property int iconSide: Math.ceil(Style.font.subtitle * 1.4)
-  // Where text and chips start: past the icon square plus one small gap.
-  readonly property int gutter: root.iconSide + Style.spacing.sm
-  // A Nerd Font glyph paints inside its advance box with the font's own
-  // bearing, so a corner glyph would look inset by two pixels. The corner
-  // glyphs carry this one optical correction, derived from the font size, and
-  // nothing else offsets them.
-  readonly property int glyphInkTop: Math.max(1, Math.round(Style.font.subtitle * 0.12))
-  // Measured on the bundled JetBrainsMono Nerd Font at 13 px: the gear's ink
-  // ends 6 device pixels (4 logical) right of its advance box, so the box is
-  // pulled 4 px left to put the painted edge on the corner. FontMetrics cannot
-  // supply this — for a private-use glyph tightBoundingRect returns the advance
-  // box, which is what the probe below prints.
-  readonly property int gearInkRight: Math.max(1, Math.round(Style.font.subtitle * 0.3))
+  // Every icon button is this square: the glyph box plus the two-pixel frame
+  // that carries the hover state. One size, so the column reads as one column.
+  readonly property int iconFrame: root.iconSide + 2 * Style.spacing.xxs
+  // Where text and chips start: past the frame plus one small gap.
+  readonly property int gutter: root.iconFrame + Style.spacing.sm
 
   readonly property var languages: Model.languages()
   readonly property string tooltipLine: outputText !== "" ? Model.preview(outputText, 70) : ""
@@ -499,47 +491,47 @@ Panel {
             }
           }
 
-          // The icon column is painted, not implied: a dim frame on every icon
-          // box, brighter under the pointer. Without it the three glyphs, each
-          // with its own bearing, read as three different left edges.
-          Rectangle {
+          // The gear shares the icon frame: same square, same offset, so the
+          // three framed glyphs sit on one line down the panel.
+          Item {
+            id: settingsBox
             anchors.right: parent.right
             anchors.top: parent.top
-            width: root.iconSide
-            height: root.iconSide
-            radius: Style.cornerRadius
-            color: settingsHover.containsMouse ? Style.hoverFill : Style.normalFill
-            border.width: 1
-            border.color: settingsHover.containsMouse
-              ? Style.hoverBorderColor : Style.normalBorderColor
-          }
+            width: root.iconFrame
+            height: root.iconFrame
 
-          Text {
-            id: settingsIcon
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.rightMargin: root.gearInkRight
-            width: root.iconSide
-            height: root.iconSide
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignTop
-            rightPadding: 0
-            topPadding: -root.glyphInkTop
-            text: "\uf013"
-            textFormat: Text.PlainText
-            color: (root.settingsOpen || settingsHover.containsMouse)
-              ? root.contentForeground : root.dimForeground
-            font.family: root.contentFontFamily
-            font.pixelSize: Style.font.subtitle
-          }
+            Rectangle {
+              anchors.fill: parent
+              radius: Style.cornerRadius
+              color: settingsHover.containsMouse ? Style.hoverFill : Style.normalFill
+              border.width: 1
+              border.color: settingsHover.containsMouse
+                ? Style.hoverBorderColor : Style.normalBorderColor
+            }
 
-          MouseArea {
-            id: settingsHover
-            anchors.fill: settingsIcon
-            anchors.margins: -Style.spacing.xs
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.openSettings()
+            Text {
+              id: settingsIcon
+              anchors.centerIn: parent
+              anchors.horizontalCenterOffset: -2
+              width: root.iconSide
+              height: root.iconSide
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
+              text: "\uf013"
+              textFormat: Text.PlainText
+              color: (root.settingsOpen || settingsHover.containsMouse)
+                ? root.contentForeground : root.dimForeground
+              font.family: root.contentFontFamily
+              font.pixelSize: Style.font.subtitle
+            }
+
+            MouseArea {
+              id: settingsHover
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.openSettings()
+            }
           }
         }
 
@@ -778,14 +770,13 @@ Panel {
 
             Item {
               id: pasteIconBox
-              width: root.iconSide
-              height: root.iconSide
+              width: root.iconFrame
+              height: root.iconFrame
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
 
               Rectangle {
                 anchors.fill: parent
-                anchors.margins: -Style.spacing.xxs
                 radius: Style.cornerRadius
                 color: pasteHover.pressed ? Style.pressedFill
                   : (pasteHover.containsMouse ? Style.hoverFill : Style.normalFill)
@@ -795,7 +786,11 @@ Panel {
               }
 
               Text {
-                anchors.fill: parent
+                id: pasteIcon
+                anchors.centerIn: parent
+                anchors.horizontalCenterOffset: -2
+                width: root.iconSide
+                height: root.iconSide
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 text: root.pasted ? "\uf00c" : "\uf0ea"
@@ -809,7 +804,6 @@ Panel {
               MouseArea {
                 id: pasteHover
                 anchors.fill: parent
-                anchors.margins: -Style.spacing.xxs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.pasteFromClipboard()
@@ -869,16 +863,15 @@ Panel {
             // area reach two pixels past the box on every side.
             Item {
               id: copyIconBox
-              width: root.iconSide
-              height: root.iconSide
+              width: root.iconFrame
+              height: root.iconFrame
               anchors.left: parent.left
               anchors.top: outputBody.top
               anchors.topMargin: Math.max(0, Math.round(
-                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - root.iconSide) / 2))
+                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - root.iconFrame) / 2))
 
               Rectangle {
                 anchors.fill: parent
-                anchors.margins: -Style.spacing.xxs
                 radius: Style.cornerRadius
                 color: copyHover.pressed ? Style.pressedFill
                   : (copyHover.containsMouse ? Style.hoverFill : Style.normalFill)
@@ -889,12 +882,12 @@ Panel {
 
               Text {
                 id: copyIcon
-                anchors.fill: parent
+                anchors.centerIn: parent
+                anchors.horizontalCenterOffset: -3
+                width: root.iconSide
+                height: root.iconSide
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                // The glyph ink sits right of its advance centre; this pulls the
-                // centre of the ink back onto the centre of the frame.
-                rightPadding: 3
                 text: root.copied ? "\uf00c" : "\uf24d"
                 textFormat: Text.PlainText
                 color: (root.copied || copyHover.containsMouse || copyHover.pressed)
@@ -906,7 +899,6 @@ Panel {
               MouseArea {
                 id: copyHover
                 anchors.fill: parent
-                anchors.margins: -Style.spacing.xxs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.copyFromIcon()
