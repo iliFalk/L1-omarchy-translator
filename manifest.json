@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "L1-translator",
   "name": "L1 Translator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Ilja Falk",
   "license": "MIT",
   "description": "L1 Translator: press a hotkey on a selection, or type into the popup, and read the translation below the bar.",

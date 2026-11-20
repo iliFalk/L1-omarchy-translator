@@ -575,7 +575,8 @@ Panel {
               id: languageField
               anchors.left: parent.left
               anchors.right: parent.right
-              anchors.rightMargin: root.iconSide
+              // The caret sits inside this box, so the text stops short of it.
+              rightPadding: root.iconSide + Style.spacing.xs
               placeholderText: "Code or name, e.g. fr"
               foreground: root.contentForeground
               font.family: root.contentFontFamily
@@ -595,9 +596,11 @@ Panel {
 
             Text {
               id: languageCaret
-              anchors.right: parent.right
+              anchors.right: languageField.right
+              anchors.rightMargin: Style.spacing.xxs
+              anchors.verticalCenter: languageField.verticalCenter
               width: root.iconSide
-              height: parent.height
+              height: languageField.height
               horizontalAlignment: Text.AlignRight
               verticalAlignment: Text.AlignVCenter
               rightPadding: 0
@@ -610,7 +613,6 @@ Panel {
               MouseArea {
                 id: languageCaretHover
                 anchors.fill: parent
-                anchors.margins: -Style.spacing.xs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
@@ -682,7 +684,7 @@ Panel {
               id: keyField
               anchors.left: parent.left
               anchors.right: parent.right
-              anchors.rightMargin: root.iconSide
+              rightPadding: root.iconSide + Style.spacing.xs
               text: root.config.apiKey
               password: !root.showKey
               placeholderText: "nvapi-…"
@@ -694,9 +696,11 @@ Panel {
 
             Text {
               id: showKeyIcon
-              anchors.right: parent.right
+              anchors.right: keyField.right
+              anchors.rightMargin: Style.spacing.xxs
+              anchors.verticalCenter: keyField.verticalCenter
               width: root.iconSide
-              height: parent.height
+              height: keyField.height
               horizontalAlignment: Text.AlignRight
               verticalAlignment: Text.AlignVCenter
               rightPadding: 0
@@ -710,7 +714,6 @@ Panel {
               MouseArea {
                 id: showKeyHover
                 anchors.fill: parent
-                anchors.margins: -Style.spacing.xs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.showKey = !root.showKey
