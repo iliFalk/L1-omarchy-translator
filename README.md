@@ -2,6 +2,8 @@
 
 A translator in the Omarchy bar: highlight text, press a key, read the translation.
 
+![The popup with the translated line](docs/screenshot.png)
+
 ```
 $ node scripts/test-model.js | tail -3
 ok   history json parses
