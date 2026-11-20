@@ -17,6 +17,6 @@
     "description": "Translate the selected text or a typed line through an OpenAI-compatible endpoint.",
     "category": "Utility",
     "allowMultiple": false,
-    "defaultSection": "centerEnd"
+    "defaultSection": "right"
   }
 }

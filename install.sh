@@ -87,12 +87,14 @@ if (( assume_yes == 0 )); then
   printf 'Place the widget on the bar now? [Y/n] '
   read -r answer
   case $answer in
-    n|N|no|NO) printf 'Skipped placement. Run: omarchy plugin enable %s --section centerEnd\n' "$id"; exit 0 ;;
+    n|N|no|NO) printf 'Skipped placement. Run: omarchy plugin enable %s --section right --index 0\n' "$id"; exit 0 ;;
   esac
 fi
 
-omarchy plugin enable "$id" --section centerEnd \
-  || omarchy bar put "$id" --section centerEnd
+# First slot of the right section: the widget sits at the end of the bar and
+# stays on it, rather than in the tray drawer or a centre box that reflows.
+omarchy plugin enable "$id" --section right --index 0 \
+  || omarchy bar put "$id" --section right --index 0
 
 cat <<EOF
 
