@@ -603,10 +603,10 @@ Panel {
             Text {
               id: languageCaret
               anchors.right: languageField.right
-              anchors.rightMargin: languageField.leftPadding
+              anchors.rightMargin: Style.spacing.xxs
               anchors.verticalCenter: languageField.verticalCenter
-              width: root.iconSide
-              height: languageField.height
+              width: root.fieldHeight
+              height: root.fieldHeight
               horizontalAlignment: Text.AlignHCenter
               verticalAlignment: Text.AlignVCenter
               leftPadding: 0
@@ -704,10 +704,10 @@ Panel {
             Text {
               id: showKeyIcon
               anchors.right: keyField.right
-              anchors.rightMargin: keyField.leftPadding
+              anchors.rightMargin: Style.spacing.xxs + 3
               anchors.verticalCenter: keyField.verticalCenter
-              width: root.iconSide
-              height: keyField.height
+              width: root.fieldHeight
+              height: root.fieldHeight
               horizontalAlignment: Text.AlignHCenter
               verticalAlignment: Text.AlignVCenter
               leftPadding: 0
