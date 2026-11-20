@@ -48,6 +48,7 @@ Panel {
   // The settings fields live inside the panel content, which the loaded panel
   // keeps in its own scope: root functions reach them through this signal.
   signal fillLanguage(string value)
+  signal fillKey(string value)
   property string languageQuery: ""
   readonly property var languageOptions: Model.findLanguages(root.languageQuery)
   // Ten rows are visible at once. The store keeps Model.HISTORY_LIMIT (20)
@@ -137,6 +138,21 @@ Panel {
     }
   }
 
+  // The API key field takes the clipboard here: the compositor's own paste key
+  // arrives as a global bind, and that is not what reaches a layer surface.
+  Process {
+    id: keyPasteReader
+    command: ["sh", "-c", "wl-paste --no-newline | head -c 8192"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var value = String(text || "").trim()
+        if (value === "") return
+        root.fillKey(value)
+      }
+    }
+  }
+
   Process {
     id: primaryReader
     command: ["sh", "-c", "wl-paste --primary --no-newline | head -c 8192"]
@@ -166,6 +182,17 @@ Panel {
     if (!content || !content.fieldItem) return
     content.fieldItem.forceActiveFocus()
     content.fieldItem.selectAll()
+  }
+
+  // Empties the line, the translation and the status: the panel back to its
+  // opening state without closing it.
+  function clearInput() {
+    root.setInput("")
+    root.outputText = ""
+    root.statusLine = ""
+    root.failed = false
+    root.copied = false
+    Qt.callLater(root.focusField)
   }
 
   function setInput(value) {
@@ -550,6 +577,10 @@ Panel {
         Connections {
           target: root
           function onFillLanguage(value) { languageField.text = value }
+          function onFillKey(value) {
+            keyField.text = value
+            root.saveConfig({ apiKey: value })
+          }
         }
 
         // ---- settings
@@ -691,7 +722,7 @@ Panel {
               id: keyField
               anchors.left: parent.left
               anchors.right: parent.right
-              rightPadding: root.iconSide + Style.spacing.controlPaddingX
+              rightPadding: 2 * root.iconSide + Style.spacing.controlPaddingX
               text: root.config.apiKey
               password: !root.showKey
               placeholderText: "nvapi-…"
@@ -699,6 +730,36 @@ Panel {
               font.family: root.contentFontFamily
               inputMethodHints: Qt.ImhNoPredictiveText
               onEditingFinished: root.saveConfig({ apiKey: text.trim() })
+
+              Keys.onPressed: function(event) {
+                if (event.key === Qt.Key_V && (event.modifiers & Qt.MetaModifier)) {
+                  keyPasteReader.running = true
+                  event.accepted = true
+                }
+              }
+            }
+
+            Text {
+              id: pasteKeyIcon
+              anchors.right: showKeyIcon.left
+              anchors.verticalCenter: keyField.verticalCenter
+              width: root.iconSide
+              height: root.fieldHeight
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
+              text: "\uf0ea"
+              textFormat: Text.PlainText
+              color: pasteKeyHover.containsMouse ? root.contentForeground : root.dimForeground
+              font.family: root.contentFontFamily
+              font.pixelSize: Style.font.subtitle
+
+              MouseArea {
+                id: pasteKeyHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: keyPasteReader.running = true
+              }
             }
 
             Text {
@@ -835,6 +896,8 @@ Panel {
               anchors.right: parent.right
               height: root.fieldHeight
               leftPadding: Style.space(4)
+              // room for the clear glyph on the right
+              rightPadding: root.fieldHeight
               focus: true
               placeholderText: "Text to translate"
               foreground: root.contentForeground
@@ -849,6 +912,35 @@ Panel {
                   root.translate(inputField.text)
                   event.accepted = true
                 }
+              }
+            }
+
+            // Erase what the line holds. It appears only while there is text, so
+            // the row keeps one click target when the field is empty.
+            Text {
+              id: clearIcon
+              // same box and same inset as the gear, so both glyph centres land
+              // on one vertical line down the right side of the panel
+              anchors.right: inputField.right
+              anchors.rightMargin: Style.spacing.xxs
+              anchors.verticalCenter: inputField.verticalCenter
+              width: root.fieldHeight
+              height: root.fieldHeight
+              visible: inputField.text !== ""
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
+              text: "\uf00d"
+              textFormat: Text.PlainText
+              color: clearHover.containsMouse ? root.contentForeground : root.dimForeground
+              font.family: root.contentFontFamily
+              font.pixelSize: Style.font.subtitle
+
+              MouseArea {
+                id: clearHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.clearInput()
               }
             }
           }
