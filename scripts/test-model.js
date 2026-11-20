@@ -81,6 +81,7 @@ check('german example present', mod.instructionPrompt('de').indexOf("'Der Tisch'
 check('200 parses', mod.parseReply(200, JSON.stringify({ choices: [{ message: { content: 'Привет' } }] })), { ok: true, text: 'Привет' })
 check('fence stripped', mod.parseReply(200, JSON.stringify({ choices: [{ message: { content: '```\nHallo\n```' } }] })).text, 'Hallo')
 check('401 english', mod.parseReply(401, '{}').error, 'Key rejected (401)')
+check('403 carries the provider words', mod.parseReply(403, JSON.stringify({ detail: 'Authorization failed' })).error, 'Key rejected (403): Authorization failed')
 check('429 english', mod.parseReply(429, '{}').error, 'Rate limit, try again later (429)')
 check('404 english', mod.parseReply(404, '{}').error, 'Model or address not found (404)')
 check('provider message kept', mod.parseReply(400, JSON.stringify({ error: { message: 'nope' } })).error, 'Error 400: nope')

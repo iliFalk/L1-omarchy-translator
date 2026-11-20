@@ -317,21 +317,26 @@ function cancel() {
 
 function errorFromBody(status, body) {
   var detail = ""
+  var parsed = null
   try {
-    var parsed = JSON.parse(String(body || ""))
-    detail = String((parsed.error && (parsed.error.message || parsed.error)) || parsed.detail || "")
+    parsed = JSON.parse(String(body || ""))
   } catch (error) {
-    detail = ""
+    parsed = null
+  }
+  if (parsed && typeof parsed === "object") {
+    detail = String((parsed.error && (parsed.error.message || parsed.error)) || parsed.detail || "")
+  } else {
+    detail = String(body || "")
   }
   // The error text is laid out in the panel, so it is bounded here too: a
   // provider that answers 400 with a megabyte of prose must not reach layout.
-  if (detail === "") detail = String(body || "")
   if (detail.length > 200) detail = detail.slice(0, 200) + "…"
-  if (status === 401 || status === 403) return "Key rejected (" + status + "): " + detail
+  var suffix = detail === "" ? "" : ": " + detail
+  if (status === 401 || status === 403) return "Key rejected (" + status + ")" + suffix
   if (status === 429) return "Rate limit, try again later (429)"
   if (status === 404) return "Model or address not found (404)"
   if (status === 0) return "No connection to the provider"
-  return "Error " + status + ": " + detail
+  return "Error " + status + suffix
 }
 
 // { ok: true, text } or { ok: false, error }.
