@@ -5,19 +5,19 @@ import qs.Commons
 import qs.Ui
 
 // Translator entry point for the bar: one glyph, a popout panel, and the IPC
-// routes the hotkey uses.
+// routes a caller may use.
 //
-// Click opens the panel for a typed line. `translateSelection` reads the
-// primary selection (the text highlighted in the focused window) and opens the
-// panel on its translation; `translate <text>` does the same for text handed
-// in by a caller.
+// Click opens the panel; the panel reads the primary selection itself when it
+// opens, so no route here has to touch the selection. `translate <text>` hands
+// a string in from outside.
 BarWidget {
   id: root
   moduleName: "L1-translator"
 
   // A glyph from the bundled Nerd Font; override with {"icon": "..."} in the
-  // shell.json entry when a theme's font lacks it.
-  readonly property string iconGlyph: setting("icon", "\uf1ab")
+  // shell.json entry when a theme's font lacks it. The default is the mark the
+  // panel header carries, so the bar and the popup show the same sign.
+  readonly property string iconGlyph: setting("icon", "\u6587")
   readonly property string tooltipLine: panelLoader.item ? panelLoader.item.tooltipLine : ""
 
   // ---- Panel lifecycle. Bar.findPanelWidget needs open/close/opened on the
@@ -72,60 +72,19 @@ BarWidget {
     }
   }
 
-  // ---- Reading what the user highlighted. The panel is opened only once the
-  //      text is in hand: opening it takes the keyboard, and a surface that
-  //      takes focus is the wrong moment to ask the compositor for a selection.
-  function hasText(value) {
-    return String(value || "").replace(/\s+/g, "") !== ""
-  }
-
-  function acceptSelection(value, fromPrimary) {
-    if (!root.hasText(value) && fromPrimary) {
-      clipboardProcess.running = true
-      return
-    }
-    if (!root.hasText(value)) {
-      root.open()
-      return
-    }
-    root.translate(String(value))
-  }
-
-  function translateSelection() {
-    if (primaryProcess.running) return
-    primaryProcess.running = true
-  }
-
+  // ---- A caller hands text in; nothing here reads a selection. The panel
+  //      does that on its own when it opens, which keeps this widget free of
+  //      clipboard access and of a route that would read the user's selection.
   function translate(value) {
     root.open()
     if (panelLoader.item) panelLoader.item.translate(String(value || ""))
   }
 
-  Process {
-    id: primaryProcess
-    command: ["wl-paste", "--primary", "--no-newline"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.acceptSelection(text, true)
-    }
-  }
-
-  Process {
-    id: clipboardProcess
-    command: ["wl-paste", "--no-newline"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.acceptSelection(text, false)
-    }
-  }
-
-  // Routes reached by the hotkey and by hand:
-  //   omarchy-shell shell call L1-translator translateSelection
+  // Routes reached by hand:
   //   omarchy-shell shell call L1-translator translate "hallo"
   ShellIpc {
     target: "L1-translator"
 
-    function translateSelection(): void { root.translateSelection() }
     function translate(text: string): void { root.translate(text) }
     function open(): void { root.open() }
     function close(): void { root.close() }

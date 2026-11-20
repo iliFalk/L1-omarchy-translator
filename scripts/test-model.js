@@ -85,6 +85,9 @@ check('429 english', mod.parseReply(429, '{}').error, 'Rate limit, try again lat
 check('404 english', mod.parseReply(404, '{}').error, 'Model or address not found (404)')
 check('provider message kept', mod.parseReply(400, JSON.stringify({ error: { message: 'nope' } })).error, 'Error 400: nope')
 check('empty translation fails', mod.parseReply(200, JSON.stringify({ choices: [{ message: { content: '' } }] })).ok, false)
+check('long reply is truncated', mod.parseReply(200, JSON.stringify({ choices: [{ message: { content: 'x'.repeat(20000) } }] })).text.length, 8000)
+check('truncation is flagged', mod.parseReply(200, JSON.stringify({ choices: [{ message: { content: 'x'.repeat(20000) } }] })).truncated, true)
+check('short reply is not flagged', mod.parseReply(200, JSON.stringify({ choices: [{ message: { content: 'ok' } }] })).truncated, undefined)
 check('no choices fails', mod.parseReply(200, '{}').ok, false)
 check('non json fails', mod.parseReply(200, '<html>').ok, false)
 

@@ -9,6 +9,13 @@ var DEFAULT_MODEL = "nvidia/riva-translate-4b-instruct-v2"
 var DEFAULT_FALLBACK_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 var DEFAULT_MAX_CHARS = 2000
 var HISTORY_LIMIT = 20
+// A reply is untrusted text from a third-party endpoint: it is bounded before
+// it reaches layout, the clipboard or the history file.
+var MAX_REPLY_CHARS = 8000
+// A request that opens a connection and never answers must not wedge the
+// panel or keep the token in flight.
+var REQUEST_TIMEOUT_MS = 20000
+var pendingRequest = null
 // Above this many words the input is prose, not a term that needs an article.
 var SHORT_PHRASE_WORDS = 3
 
@@ -252,14 +259,23 @@ function send(config, text, pair, onReply) {
   var url = completionsUrl(config)
 
   function attempt(index) {
+    // One request in flight: a newer ask, or a panel that closed, must not
+    // leave the previous connection pending with the token in its header.
+    if (pendingRequest) {
+      try { pendingRequest.abort() } catch (error) { }
+      pendingRequest = null
+    }
     var model = chain[index]
     var request = new XMLHttpRequest()
+    request.timeout = REQUEST_TIMEOUT_MS
     request.open("POST", url, true)
     request.setRequestHeader("Content-Type", "application/json")
     request.setRequestHeader("Accept", "application/json")
     request.setRequestHeader("Authorization", "Bearer " + String((config && config.apiKey) || ""))
     request.onreadystatechange = function() {
       if (request.readyState !== 4) return
+      if (pendingRequest !== request) return
+      pendingRequest = null
       var reply = parseReply(request.status, request.responseText)
       if (!reply.ok && index + 1 < chain.length) {
         attempt(index + 1)
@@ -269,14 +285,34 @@ function send(config, text, pair, onReply) {
         ok: reply.ok,
         text: reply.ok ? reply.text : "",
         error: reply.ok ? "" : reply.error,
+        truncated: reply.ok && reply.truncated === true,
         model: model,
         fallback: index > 0
       })
     }
+    request.ontimeout = function() {
+      if (pendingRequest !== request) return
+      pendingRequest = null
+      onReply({
+        ok: false,
+        text: "",
+        error: "The provider did not answer within " + Math.round(REQUEST_TIMEOUT_MS / 1000) + " s",
+        model: model,
+        fallback: index > 0
+      })
+    }
+    pendingRequest = request
     request.send(requestBody(config, model, text, pair))
   }
 
   attempt(0)
+}
+
+// Called when the panel closes: nothing of ours stays in flight afterwards.
+function cancel() {
+  if (!pendingRequest) return
+  try { pendingRequest.abort() } catch (error) { }
+  pendingRequest = null
 }
 
 function errorFromBody(status, body) {
@@ -314,6 +350,9 @@ function parseReply(status, body) {
   if (text === "") text = String(choices[0].text || "")
   text = stripNoise(text)
   if (text === "") return { ok: false, error: "The model returned an empty translation" }
+  if (text.length > MAX_REPLY_CHARS) {
+    return { ok: true, text: text.slice(0, MAX_REPLY_CHARS), truncated: true }
+  }
   return { ok: true, text: text }
 }
 

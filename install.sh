@@ -41,11 +41,22 @@ if (( ${#missing[@]} > 0 )); then
 fi
 
 if [[ $mode == uninstall ]]; then
-  omarchy plugin disable "$id" || true
-  omarchy plugin remove "$id" || true
-  omarchy-shell shell rescanPlugins || true
-  printf 'Removed %s.\n' "$id"
-  exit 0
+  # Every step is checked: a removal that only looks done leaves a widget
+  # running with the user's rights while telling the user it is gone.
+  status=0
+  omarchy plugin disable "$id" || status=1
+  omarchy plugin remove "$id" || status=1
+  omarchy-shell shell rescanPlugins || status=1
+  if [[ -d $target ]]; then
+    printf 'Still present: %s\n' "$target" >&2
+    status=1
+  fi
+  if (( status == 0 )); then
+    printf 'Removed %s.\n' "$id"
+  else
+    printf 'Removal did not complete. Check with: omarchy plugin list --json | grep %s\n' "$id" >&2
+  fi
+  exit $status
 fi
 
 files=(manifest.json BarWidget.qml Panel.qml Model.js README.md LICENSE)
