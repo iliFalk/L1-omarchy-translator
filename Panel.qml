@@ -605,7 +605,6 @@ Panel {
               verticalAlignment: Text.AlignVCenter
               leftPadding: 0
               rightPadding: 0
-              rightPadding: 0
               text: root.languageOpen ? "\uf078" : "\uf054"
               textFormat: Text.PlainText
               color: languageCaretHover.containsMouse ? root.contentForeground : root.dimForeground
@@ -706,7 +705,6 @@ Panel {
               horizontalAlignment: Text.AlignHCenter
               verticalAlignment: Text.AlignVCenter
               leftPadding: 0
-              rightPadding: 0
               rightPadding: 0
               text: root.showKey ? "\uf070" : "\uf06e"
               textFormat: Text.PlainText
