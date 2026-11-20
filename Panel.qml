@@ -59,6 +59,20 @@ Panel {
   // the panel may read the primary selection itself.
   property bool autoRead: false
 
+  // ---- one layout scale for the whole panel -------------------------------
+  // One inset, one row gap, one icon square. Every row below reads these and
+  // nothing else, so the four sides of the content box stay equal.
+  readonly property int pad: Style.spacing.popupPadding
+  readonly property int rowGap: Style.spacing.panelGap
+  readonly property int iconSide: Math.ceil(Style.font.subtitle * 1.4)
+  // Where text and chips start: past the icon square plus one small gap.
+  readonly property int gutter: root.iconSide + Style.spacing.sm
+  // A Nerd Font glyph paints inside its advance box with the font's own
+  // bearing, so a corner glyph would look inset by two pixels. The corner
+  // glyphs carry this one optical correction, derived from the font size, and
+  // nothing else offsets them.
+  readonly property int glyphInkTop: Math.max(1, Math.round(Style.font.subtitle * 0.12))
+
   readonly property var languages: Model.languages()
   readonly property string tooltipLine: outputText !== "" ? Model.preview(outputText, 70) : ""
   readonly property color contentForeground: root.barForeground
@@ -83,6 +97,7 @@ Panel {
   }
 
   function close() {
+    Model.cancel()
     root.controller.hide()
   }
 
@@ -105,7 +120,9 @@ Panel {
 
   Process {
     id: clipboardReader
-    command: ["wl-paste", "--no-newline"]
+    // head bounds what the shell buffers: the payload is untrusted and the cap
+    // applies before the text reaches this process's memory.
+    command: ["sh", "-c", "wl-paste --no-newline | head -c 8192"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -120,7 +137,7 @@ Panel {
 
   Process {
     id: primaryReader
-    command: ["wl-paste", "--primary", "--no-newline"]
+    command: ["sh", "-c", "wl-paste --primary --no-newline | head -c 8192"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -164,10 +181,12 @@ Panel {
     for (var key in root.config) next[key] = root.config[key]
     for (var changed in patch) next[changed] = patch[changed]
     root.config = Model.parseConfig(JSON.stringify(next))
-    configFile.setText(JSON.stringify(next, null, 2) + "\n")
-    // A file Quickshell writes gets the default umask, and this one holds the
-    // key: keep it readable by its owner only.
-    Quickshell.execDetached(["chmod", "600", root.configPath])
+    var payload = JSON.stringify(next, null, 2) + "\n"
+    // Written by a shell that sets umask 077 first: the file holds the key, so
+    // it is born at 600 instead of being chmod-ed after the write, which would
+    // leave a window at the umask mode.
+    Quickshell.execDetached(["sh", "-c", "umask 077; printf '%s' \"$2\" > \"$1\"", "sh",
+      root.configPath, payload])
   }
 
   function openSettings() {
@@ -266,6 +285,7 @@ Panel {
       root.outputText = result.text
       root.statusLine = root.pairLabel(pair) + " · " + Model.modelLabel(result.model)
         + (result.fallback ? " · fallback" : "")
+        + (result.truncated ? " · truncated at 8000 characters" : "")
       root.remember(text, result.text, pair)
       root.copyOutput()
     })
@@ -396,6 +416,9 @@ Panel {
     open: root.opened
     // Anchored under the widget, so the popup follows wherever it is placed.
     centerOnBar: false
+    // The inset belongs to this panel. The card keeps no padding of its own,
+    // so all four sides come from the one value below.
+    padding: 0
     focusTarget: (panel.loadedContent && panel.loadedContent.fieldItem)
       ? panel.loadedContent.fieldItem
       : null
@@ -409,47 +432,51 @@ Panel {
       focus: false
       property Item fieldItem: inputField
       implicitWidth: panel.contentWidth
-      implicitHeight: body.implicitHeight
+      implicitHeight: body.implicitHeight + root.pad * 2
 
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
+      // One content box, one inset, top to bottom.
       Column {
         id: body
-        width: parent.width
-        spacing: Style.space(10)
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: root.pad
+        spacing: root.rowGap
 
-        // ---- target language and the settings toggle
+        // ---- header: mark top-left, languages in the gutter, gear top-right
+        // The row is one icon square tall, so the mark and the gear sit on the
+        // two top corners of the content box and the chips centre between them.
         Item {
-          id: languageRow
+          id: headerRow
           width: parent.width
-          height: langRow.implicitHeight
+          height: Math.max(root.iconSide, langRow.height)
 
-          // The widget mark, in the same column as the paste and copy icons.
-          Item {
+          Text {
             id: widgetMark
-            readonly property int side: Math.ceil(Style.font.subtitle * 1.4)
-            width: side
-            height: side
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-
-            Text {
-              anchors.fill: parent
-              horizontalAlignment: Text.AlignHCenter
-              verticalAlignment: Text.AlignVCenter
-              text: "\u6587"
-              textFormat: Text.PlainText
-              color: root.dimForeground
-              font.family: root.contentFontFamily
-              font.pixelSize: Style.font.subtitle
-            }
+            anchors.top: parent.top
+            width: root.iconSide
+            height: root.iconSide
+            horizontalAlignment: Text.AlignLeft
+            verticalAlignment: Text.AlignTop
+            leftPadding: 0
+            topPadding: 0
+            text: "\u6587"
+            textFormat: Text.PlainText
+            color: root.dimForeground
+            font.family: root.contentFontFamily
+            font.pixelSize: Style.font.subtitle
           }
 
           Row {
             id: langRow
             // Starts on the input text column, not on the panel edge.
-            x: Style.space(25)
+            anchors.left: parent.left
+            anchors.leftMargin: root.gutter
+            anchors.verticalCenter: parent.verticalCenter
             spacing: Style.spacing.sm
 
             Repeater {
@@ -469,7 +496,13 @@ Panel {
           Text {
             id: settingsIcon
             anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            width: root.iconSide
+            height: root.iconSide
+            horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignTop
+            rightPadding: 0
+            topPadding: -root.glyphInkTop
             text: "\uf013"
             textFormat: Text.PlainText
             color: (root.settingsOpen || settingsHover.containsMouse)
@@ -481,7 +514,7 @@ Panel {
           MouseArea {
             id: settingsHover
             anchors.fill: settingsIcon
-            anchors.margins: -4
+            anchors.margins: -Style.spacing.xs
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: root.openSettings()
@@ -499,7 +532,7 @@ Panel {
         Column {
           id: settings
           width: parent.width
-          spacing: Style.space(6)
+          spacing: root.rowGap
           visible: root.settingsOpen
           // Focus follows the section, after the layout has shown the field.
           onVisibleChanged: {
@@ -520,8 +553,9 @@ Panel {
 
             TextField {
               id: languageField
-              width: parent.width
-              rightPadding: Style.space(32)
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.rightMargin: root.iconSide
               placeholderText: "Code or name, e.g. fr"
               foreground: root.contentForeground
               font.family: root.contentFontFamily
@@ -542,8 +576,11 @@ Panel {
             Text {
               id: languageCaret
               anchors.right: parent.right
-              anchors.rightMargin: Style.space(10)
-              anchors.verticalCenter: parent.verticalCenter
+              width: root.iconSide
+              height: parent.height
+              horizontalAlignment: Text.AlignRight
+              verticalAlignment: Text.AlignVCenter
+              rightPadding: 0
               text: root.languageOpen ? "\uf078" : "\uf054"
               textFormat: Text.PlainText
               color: languageCaretHover.containsMouse ? root.contentForeground : root.dimForeground
@@ -553,7 +590,7 @@ Panel {
               MouseArea {
                 id: languageCaretHover
                 anchors.fill: parent
-                anchors.margins: -4
+                anchors.margins: -Style.spacing.xs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
@@ -623,8 +660,9 @@ Panel {
 
             TextField {
               id: keyField
-              width: parent.width
-              rightPadding: Style.space(32)
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.rightMargin: root.iconSide
               text: root.config.apiKey
               password: !root.showKey
               placeholderText: "nvapi-…"
@@ -637,8 +675,11 @@ Panel {
             Text {
               id: showKeyIcon
               anchors.right: parent.right
-              anchors.rightMargin: Style.space(10)
-              anchors.verticalCenter: parent.verticalCenter
+              width: root.iconSide
+              height: parent.height
+              horizontalAlignment: Text.AlignRight
+              verticalAlignment: Text.AlignVCenter
+              rightPadding: 0
               text: root.showKey ? "\uf070" : "\uf06e"
               textFormat: Text.PlainText
               color: (root.showKey || showKeyHover.containsMouse)
@@ -649,7 +690,7 @@ Panel {
               MouseArea {
                 id: showKeyHover
                 anchors.fill: parent
-                anchors.margins: -4
+                anchors.margins: -Style.spacing.xs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.showKey = !root.showKey
@@ -701,7 +742,7 @@ Panel {
         Column {
           id: mainArea
           width: parent.width
-          spacing: Style.space(10)
+          spacing: root.rowGap
           visible: !root.settingsOpen
 
           // ---- input
@@ -715,15 +756,14 @@ Panel {
 
             Item {
               id: pasteIconBox
-              readonly property int side: Math.ceil(Style.font.subtitle * 1.4)
-              width: side
-              height: side
-              anchors.top: parent.top
-              anchors.topMargin: Math.round((inputField.height - side) / 2)
+              width: root.iconSide
+              height: root.iconSide
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
 
               Rectangle {
                 anchors.fill: parent
-                anchors.margins: -2
+                anchors.margins: -Style.spacing.xxs
                 radius: Style.cornerRadius
                 color: pasteHover.pressed ? Style.pressedFill
                   : (pasteHover.containsMouse ? Style.hoverFill : "transparent")
@@ -733,7 +773,6 @@ Panel {
                 anchors.fill: parent
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                rightPadding: 3
                 text: root.pasted ? "\uf00c" : "\uf0ea"
                 textFormat: Text.PlainText
                 color: (root.pasted || pasteHover.containsMouse || pasteHover.pressed)
@@ -745,7 +784,7 @@ Panel {
               MouseArea {
                 id: pasteHover
                 anchors.fill: parent
-                anchors.margins: -2
+                anchors.margins: -Style.spacing.xxs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.pasteFromClipboard()
@@ -755,8 +794,8 @@ Panel {
             TextField {
               id: inputField
               anchors.left: pasteIconBox.right
-              anchors.leftMargin: Style.space(6)
-              width: parent.width - pasteIconBox.width - Style.space(6)
+              anchors.leftMargin: Style.spacing.sm
+              anchors.right: parent.right
               leftPadding: Style.space(4)
               focus: true
               placeholderText: "Text to translate"
@@ -805,16 +844,16 @@ Panel {
             // area reach two pixels past the box on every side.
             Item {
               id: copyIconBox
-              readonly property int side: Math.ceil(Style.font.subtitle * 1.4)
-              width: side
-              height: side
+              width: root.iconSide
+              height: root.iconSide
+              anchors.left: parent.left
               anchors.top: outputBody.top
-              anchors.topMargin: Math.round(
-                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - side) / 2)
+              anchors.topMargin: Math.max(0, Math.round(
+                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - root.iconSide) / 2))
 
               Rectangle {
                 anchors.fill: parent
-                anchors.margins: -2
+                anchors.margins: -Style.spacing.xxs
                 radius: Style.cornerRadius
                 color: copyHover.pressed ? Style.pressedFill
                   : (copyHover.containsMouse ? Style.hoverFill : "transparent")
@@ -839,7 +878,7 @@ Panel {
               MouseArea {
                 id: copyHover
                 anchors.fill: parent
-                anchors.margins: -2
+                anchors.margins: -Style.spacing.xxs
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.copyFromIcon()
@@ -849,8 +888,8 @@ Panel {
             TextEdit {
               id: outputBody
               anchors.left: copyIconBox.right
-              anchors.leftMargin: Style.space(10)
-              width: parent.width - copyIconBox.width - Style.space(10)
+              anchors.leftMargin: Style.spacing.sm
+              anchors.right: parent.right
               readOnly: true
               selectByMouse: true
               wrapMode: TextEdit.Wrap
@@ -864,17 +903,18 @@ Panel {
           }
 
           // ---- hint and history header, on one line
-          // The hint holds the left edge, the History header the right one, so
-          // the row costs a single line whether or not history exists.
+          // The hint sits on the bottom-left corner of the content box, the
+          // History header on the bottom-right one; the row is exactly as tall
+          // as the taller of the two, so neither leaves a gap under it.
           Item {
-            id: hintRow
+            id: footerRow
             width: parent.width
             height: Math.max(hintText.implicitHeight, historyHeader.implicitHeight)
 
             Text {
               id: hintText
               anchors.left: parent.left
-              anchors.verticalCenter: parent.verticalCenter
+              anchors.bottom: parent.bottom
               text: "Enter translates · Esc closes"
               textFormat: Text.PlainText
               color: root.dimForeground
@@ -885,7 +925,7 @@ Panel {
             PanelSectionHeader {
               id: historyHeader
               anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
+              anchors.bottom: parent.bottom
               visible: root.history.length > 0
               horizontalAlignment: Text.AlignRight
               text: (root.historyOpen ? "\uf078" : "\uf054") + "  History"
@@ -895,8 +935,9 @@ Panel {
 
             MouseArea {
               anchors.right: parent.right
+              anchors.bottom: parent.bottom
               width: historyHeader.width
-              height: parent.height
+              height: historyHeader.height
               visible: root.history.length > 0
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
@@ -909,7 +950,7 @@ Panel {
           // wheel reaches the other ten.
           ListView {
             id: historyList
-            width: body.width
+            width: parent.width
             height: Math.min(contentHeight, root.historyRowHeight * root.historyVisibleRows)
             visible: root.historyOpen
             clip: true
