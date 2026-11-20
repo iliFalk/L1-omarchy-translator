@@ -67,9 +67,8 @@ Panel {
   readonly property int iconSide: Math.ceil(Style.font.subtitle * 1.4)
   // Every icon button is this square: the glyph box plus the two-pixel frame
   // that carries the hover state. One size, so the column reads as one column.
-  readonly property int iconFrame: root.iconSide + 2 * Style.spacing.xxs
-  // Where text and chips start: past the frame plus one small gap.
-  readonly property int gutter: root.iconFrame + Style.spacing.sm
+  // The icon buttons take their height from the input field, so a button and
+  // the field next to it form one strip of equal height.
 
   readonly property var languages: Model.languages()
   readonly property string tooltipLine: outputText !== "" ? Model.preview(outputText, 70) : ""
@@ -473,7 +472,7 @@ Panel {
             id: langRow
             // Starts on the input text column, not on the panel edge.
             anchors.left: parent.left
-            anchors.leftMargin: root.gutter
+            anchors.leftMargin: inputField.implicitHeight + Style.spacing.sm
             anchors.verticalCenter: parent.verticalCenter
             spacing: Style.spacing.sm
 
@@ -497,8 +496,8 @@ Panel {
             id: settingsBox
             anchors.right: parent.right
             anchors.top: parent.top
-            width: root.iconFrame
-            height: root.iconFrame
+            width: inputField.implicitHeight
+            height: inputField.implicitHeight
 
             Rectangle {
               anchors.fill: parent
@@ -770,8 +769,8 @@ Panel {
 
             Item {
               id: pasteIconBox
-              width: root.iconFrame
-              height: root.iconFrame
+              width: inputField.implicitHeight
+              height: inputField.implicitHeight
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
 
@@ -863,12 +862,12 @@ Panel {
             // area reach two pixels past the box on every side.
             Item {
               id: copyIconBox
-              width: root.iconFrame
-              height: root.iconFrame
+              width: inputField.implicitHeight
+              height: inputField.implicitHeight
               anchors.left: parent.left
               anchors.top: outputBody.top
               anchors.topMargin: Math.max(0, Math.round(
-                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - root.iconFrame) / 2))
+                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - inputField.implicitHeight) / 2))
 
               Rectangle {
                 anchors.fill: parent
