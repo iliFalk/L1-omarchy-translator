@@ -72,6 +72,12 @@ Panel {
   // glyphs carry this one optical correction, derived from the font size, and
   // nothing else offsets them.
   readonly property int glyphInkTop: Math.max(1, Math.round(Style.font.subtitle * 0.12))
+  // Measured on the bundled JetBrainsMono Nerd Font at 13 px: the gear's ink
+  // ends 6 device pixels (4 logical) right of its advance box, so the box is
+  // pulled 4 px left to put the painted edge on the corner. FontMetrics cannot
+  // supply this — for a private-use glyph tightBoundingRect returns the advance
+  // box, which is what the probe below prints.
+  readonly property int gearInkRight: Math.max(1, Math.round(Style.font.subtitle * 0.3))
 
   readonly property var languages: Model.languages()
   readonly property string tooltipLine: outputText !== "" ? Model.preview(outputText, 70) : ""
@@ -497,6 +503,7 @@ Panel {
             id: settingsIcon
             anchors.right: parent.right
             anchors.top: parent.top
+            anchors.rightMargin: root.gearInkRight
             width: root.iconSide
             height: root.iconSide
             horizontalAlignment: Text.AlignRight
