@@ -499,6 +499,21 @@ Panel {
             }
           }
 
+          // The icon column is painted, not implied: a dim frame on every icon
+          // box, brighter under the pointer. Without it the three glyphs, each
+          // with its own bearing, read as three different left edges.
+          Rectangle {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            width: root.iconSide
+            height: root.iconSide
+            radius: Style.cornerRadius
+            color: settingsHover.containsMouse ? Style.hoverFill : Style.normalFill
+            border.width: 1
+            border.color: settingsHover.containsMouse
+              ? Style.hoverBorderColor : Style.normalBorderColor
+          }
+
           Text {
             id: settingsIcon
             anchors.right: parent.right
@@ -773,7 +788,10 @@ Panel {
                 anchors.margins: -Style.spacing.xxs
                 radius: Style.cornerRadius
                 color: pasteHover.pressed ? Style.pressedFill
-                  : (pasteHover.containsMouse ? Style.hoverFill : "transparent")
+                  : (pasteHover.containsMouse ? Style.hoverFill : Style.normalFill)
+                border.width: 1
+                border.color: pasteHover.containsMouse
+                  ? Style.hoverBorderColor : Style.normalBorderColor
               }
 
               Text {
@@ -863,7 +881,10 @@ Panel {
                 anchors.margins: -Style.spacing.xxs
                 radius: Style.cornerRadius
                 color: copyHover.pressed ? Style.pressedFill
-                  : (copyHover.containsMouse ? Style.hoverFill : "transparent")
+                  : (copyHover.containsMouse ? Style.hoverFill : Style.normalFill)
+                border.width: 1
+                border.color: copyHover.containsMouse
+                  ? Style.hoverBorderColor : Style.normalBorderColor
               }
 
               Text {
