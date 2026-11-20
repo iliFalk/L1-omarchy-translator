@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "L1-translator",
+  "name": "L1 Translator",
+  "version": "0.1.0",
+  "author": "Ilja Falk",
+  "license": "MIT",
+  "description": "L1 Translator: press a hotkey on a selection, or type into the popup, and read the translation below the bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "L1 Translator",
+    "description": "Translate the selected text or a typed line through an OpenAI-compatible endpoint.",
+    "category": "Utility",
+    "allowMultiple": false,
+    "defaultSection": "centerEnd"
+  }
+}

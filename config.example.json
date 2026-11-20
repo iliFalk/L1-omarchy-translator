@@ -1,0 +1,7 @@
+{
+  "apiKey": "nvapi-REPLACE-WITH-YOUR-KEY",
+  "model": "nvidia/nemotron-3.5-bolt-e4b",
+  "fallbackModel": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+  "endpoint": "https://integrate.api.nvidia.com/v1",
+  "maxChars": 2000
+}

@@ -1,0 +1,9 @@
+# The token lives here, never in git.
+config.json
+
+# Local archives and editor leftovers.
+*.tar.gz
+*.zip
+.DS_Store
+__pycache__/
+node_modules/
