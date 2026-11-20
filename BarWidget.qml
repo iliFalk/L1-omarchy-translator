@@ -80,17 +80,10 @@ BarWidget {
     if (panelLoader.item) panelLoader.item.translate(String(value || ""))
   }
 
-  // One route, and it takes the text from the caller: no route here reads the
-  // user's selection, so a local process cannot make the plugin pull what is
-  // highlighted and send it anywhere.
-  //   omarchy-shell shell call L1-translator translate "hallo"
-  // The panel lifecycle is reached through the host route `shell toggle <id>`,
-  // which the bar answers itself.
-  ShellIpc {
-    target: "L1-translator"
-
-    function translate(text: string): void { root.translate(text) }
-  }
+  // No IPC route: the panel is reached through the host route
+  // `omarchy-shell shell toggle L1-translator`, which the bar answers itself,
+  // and a third-party plugin's own ShellIpc target is not reachable from the
+  // CLI here. Nothing in this widget needs a route of its own.
 
   WidgetButton {
     id: button

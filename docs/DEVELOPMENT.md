@@ -58,13 +58,11 @@ itself with `wl-paste --primary`, and acts on it only when it differs from what
 is already shown. A click on the bar glyph and the hotkey therefore do the same
 thing, and no IPC route into the plugin is required.
 
-`translate` stays available as an explicit route; the widget exposes no route
-that reads the selection, so a caller cannot make the plugin read what the user
-highlighted:
-
-```sh
-omarchy-shell shell call L1-translator translate "Guten Tag"
-```
+`translate` is a plain function on the widget, not an IPC route: a third-party
+plugin's own `ShellIpc` target is not reachable from the CLI on this shell, so
+the panel is reached through the host route `omarchy-shell shell toggle
+L1-translator`. The widget exposes no route of its own, and none that reads the
+selection.
 
 ## Tests
 
