@@ -597,7 +597,7 @@ Panel {
             Text {
               id: languageCaret
               anchors.right: languageField.right
-              anchors.rightMargin: Style.spacing.xxs
+              anchors.rightMargin: Style.space(8)
               anchors.verticalCenter: languageField.verticalCenter
               width: root.iconSide
               height: languageField.height
@@ -697,7 +697,7 @@ Panel {
             Text {
               id: showKeyIcon
               anchors.right: keyField.right
-              anchors.rightMargin: Style.spacing.xxs
+              anchors.rightMargin: Style.space(8)
               anchors.verticalCenter: keyField.verticalCenter
               width: root.iconSide
               height: keyField.height
