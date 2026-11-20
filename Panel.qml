@@ -459,13 +459,15 @@ Panel {
           Text {
             id: widgetMark
             anchors.left: parent.left
-            anchors.top: parent.top
-            width: root.iconSide
+            anchors.verticalCenter: parent.verticalCenter
+            width: root.fieldHeight
             height: root.iconSide
-            horizontalAlignment: Text.AlignLeft
-            verticalAlignment: Text.AlignTop
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
             leftPadding: 0
+            rightPadding: 0
             topPadding: 0
+            bottomPadding: 0
             text: "\u6587"
             textFormat: Text.PlainText
             color: root.dimForeground
