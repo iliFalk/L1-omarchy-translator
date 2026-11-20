@@ -58,7 +58,9 @@ itself with `wl-paste --primary`, and acts on it only when it differs from what
 is already shown. A click on the bar glyph and the hotkey therefore do the same
 thing, and no IPC route into the plugin is required.
 
-`translate` and `translateSelection` stay available as explicit routes:
+`translate` stays available as an explicit route; the widget exposes no route
+that reads the selection, so a caller cannot make the plugin read what the user
+highlighted:
 
 ```sh
 omarchy-shell shell call L1-translator translate "Guten Tag"
@@ -95,11 +97,21 @@ Omarchy machine alone.
 ## Security
 
 - `config.json` holds the token. It stays outside this repository, and
-  `install.sh` creates it with mode 600.
-- The settings screen rewrites that file with the umbrella mode Quickshell uses,
-  so it runs `chmod 600` after every write.
-- `install.sh` copies files and calls two Omarchy commands. It starts no
-  service and asks for no privilege beyond the user's own.
+  `install.sh` creates it with an empty key and mode 600.
+- The settings screen writes that file through `sh` with `umask 077`, so the
+  new file is born at 600. A chmod after the write would leave a window at the
+  umask mode.
+- The reply is untrusted text from a third-party endpoint: it is cut at 8000
+  characters before it reaches layout, the clipboard or the history file.
+- The request times out after 20 s. A newer translation aborts the request in
+  flight, and closing the popup cancels it, so no connection is left pending
+  with the token in its header.
+- The primary selection and the clipboard are read through
+  `wl-paste | head -c 8192`: the cap applies in the pipe, so an oversized
+  payload never reaches the shell process.
+- `install.sh` copies files and calls Omarchy commands. It starts no service
+  and asks for no privilege beyond the user's own. A removal that fails reports
+  the failure instead of printing success.
 
 ## Update
 
