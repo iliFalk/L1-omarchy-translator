@@ -65,6 +65,11 @@ Panel {
   readonly property int pad: Style.spacing.popupPadding
   readonly property int rowGap: Style.spacing.panelGap
   readonly property int iconSide: Math.ceil(Style.font.subtitle * 1.4)
+  // One height for the input field and every icon button beside it: derived
+  // from the same tokens the kit's TextField uses, so a button and the field
+  // form one strip and no item has to read another item's size.
+  readonly property int fieldHeight: Math.ceil(Style.font.subtitle
+    + 2 * (Style.spacing.inputPaddingY + Style.normalBorderWidth))
   // Every icon button is this square: the glyph box plus the two-pixel frame
   // that carries the hover state. One size, so the column reads as one column.
   // The icon buttons take their height from the input field, so a button and
@@ -472,7 +477,7 @@ Panel {
             id: langRow
             // Starts on the input text column, not on the panel edge.
             anchors.left: parent.left
-            anchors.leftMargin: inputField.implicitHeight + Style.spacing.sm
+            anchors.leftMargin: root.fieldHeight + Style.spacing.sm
             anchors.verticalCenter: parent.verticalCenter
             spacing: Style.spacing.sm
 
@@ -496,8 +501,8 @@ Panel {
             id: settingsBox
             anchors.right: parent.right
             anchors.top: parent.top
-            width: inputField.implicitHeight
-            height: inputField.implicitHeight
+            width: root.fieldHeight
+            height: root.fieldHeight
 
             Rectangle {
               anchors.fill: parent
@@ -512,7 +517,6 @@ Panel {
               id: settingsIcon
               anchors.centerIn: parent
               anchors.horizontalCenterOffset: -1
-              anchors.verticalCenterOffset: 1
               width: root.iconSide
               height: root.iconSide
               horizontalAlignment: Text.AlignHCenter
@@ -770,8 +774,8 @@ Panel {
 
             Item {
               id: pasteIconBox
-              width: inputField.implicitHeight
-              height: inputField.implicitHeight
+              width: root.fieldHeight
+              height: root.fieldHeight
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
 
@@ -790,7 +794,6 @@ Panel {
                 anchors.centerIn: parent
                 anchors.horizontalCenterOffset: -1
                 anchors.verticalCenterOffset: 1
-              anchors.verticalCenterOffset: 1
                 width: root.iconSide
                 height: root.iconSide
                 horizontalAlignment: Text.AlignHCenter
@@ -817,6 +820,7 @@ Panel {
               anchors.left: pasteIconBox.right
               anchors.leftMargin: Style.spacing.sm
               anchors.right: parent.right
+              height: root.fieldHeight
               leftPadding: Style.space(4)
               focus: true
               placeholderText: "Text to translate"
@@ -865,12 +869,12 @@ Panel {
             // area reach two pixels past the box on every side.
             Item {
               id: copyIconBox
-              width: inputField.implicitHeight
-              height: inputField.implicitHeight
+              width: root.fieldHeight
+              height: root.fieldHeight
               anchors.left: parent.left
               anchors.top: outputBody.top
               anchors.topMargin: Math.max(0, Math.round(
-                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - inputField.implicitHeight) / 2))
+                (outputBody.contentHeight / Math.max(1, outputBody.lineCount) - root.fieldHeight) / 2))
 
               Rectangle {
                 anchors.fill: parent
@@ -887,7 +891,6 @@ Panel {
                 anchors.centerIn: parent
                 anchors.horizontalCenterOffset: -1
                 anchors.verticalCenterOffset: 1
-              anchors.verticalCenterOffset: 1
                 width: root.iconSide
                 height: root.iconSide
                 horizontalAlignment: Text.AlignHCenter
