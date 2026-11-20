@@ -511,7 +511,8 @@ Panel {
             Text {
               id: settingsIcon
               anchors.centerIn: parent
-              anchors.horizontalCenterOffset: 4
+              anchors.horizontalCenterOffset: -1
+              anchors.verticalCenterOffset: 1
               width: root.iconSide
               height: root.iconSide
               horizontalAlignment: Text.AlignHCenter
@@ -787,7 +788,9 @@ Panel {
               Text {
                 id: pasteIcon
                 anchors.centerIn: parent
-                anchors.horizontalCenterOffset: 4
+                anchors.horizontalCenterOffset: -1
+                anchors.verticalCenterOffset: 1
+              anchors.verticalCenterOffset: 1
                 width: root.iconSide
                 height: root.iconSide
                 horizontalAlignment: Text.AlignHCenter
@@ -882,7 +885,9 @@ Panel {
               Text {
                 id: copyIcon
                 anchors.centerIn: parent
-                anchors.horizontalCenterOffset: 4
+                anchors.horizontalCenterOffset: -1
+                anchors.verticalCenterOffset: 1
+              anchors.verticalCenterOffset: 1
                 width: root.iconSide
                 height: root.iconSide
                 horizontalAlignment: Text.AlignHCenter
