@@ -576,7 +576,7 @@ Panel {
               anchors.left: parent.left
               anchors.right: parent.right
               // The caret sits inside this box, so the text stops short of it.
-              rightPadding: root.iconSide + Style.spacing.xs
+              rightPadding: root.iconSide + Style.spacing.controlPaddingX
               placeholderText: "Code or name, e.g. fr"
               foreground: root.contentForeground
               font.family: root.contentFontFamily
@@ -597,12 +597,14 @@ Panel {
             Text {
               id: languageCaret
               anchors.right: languageField.right
-              anchors.rightMargin: Style.space(8)
+              anchors.rightMargin: languageField.leftPadding
               anchors.verticalCenter: languageField.verticalCenter
               width: root.iconSide
               height: languageField.height
-              horizontalAlignment: Text.AlignRight
+              horizontalAlignment: Text.AlignHCenter
               verticalAlignment: Text.AlignVCenter
+              leftPadding: 0
+              rightPadding: 0
               rightPadding: 0
               text: root.languageOpen ? "\uf078" : "\uf054"
               textFormat: Text.PlainText
@@ -684,7 +686,7 @@ Panel {
               id: keyField
               anchors.left: parent.left
               anchors.right: parent.right
-              rightPadding: root.iconSide + Style.spacing.xs
+              rightPadding: root.iconSide + Style.spacing.controlPaddingX
               text: root.config.apiKey
               password: !root.showKey
               placeholderText: "nvapi-…"
@@ -697,12 +699,14 @@ Panel {
             Text {
               id: showKeyIcon
               anchors.right: keyField.right
-              anchors.rightMargin: Style.space(8)
+              anchors.rightMargin: keyField.leftPadding
               anchors.verticalCenter: keyField.verticalCenter
               width: root.iconSide
               height: keyField.height
-              horizontalAlignment: Text.AlignRight
+              horizontalAlignment: Text.AlignHCenter
               verticalAlignment: Text.AlignVCenter
+              leftPadding: 0
+              rightPadding: 0
               rightPadding: 0
               text: root.showKey ? "\uf070" : "\uf06e"
               textFormat: Text.PlainText
