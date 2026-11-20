@@ -31,6 +31,8 @@ o.bind("SUPER + Y", "Translate selection", "omarchy-shell -q shell toggle L1-tra
 
 For updates, clone the repository instead: `git clone https://github.com/iliFalk/L1-omarchy-translator && bash L1-omarchy-translator/start.sh` — then `git pull` fetches later versions.
 
+To remove the widget: `bash start.sh --uninstall`. It disables the plugin, removes it from the plugin folder and rescans the shell.
+
 ## Use
 
 | Where | What it does |
