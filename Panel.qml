@@ -181,12 +181,12 @@ Panel {
     for (var key in root.config) next[key] = root.config[key]
     for (var changed in patch) next[changed] = patch[changed]
     root.config = Model.parseConfig(JSON.stringify(next))
-    var payload = JSON.stringify(next, null, 2) + "\n"
-    // Written by a shell that sets umask 077 first: the file holds the key, so
-    // it is born at 600 instead of being chmod-ed after the write, which would
-    // leave a window at the umask mode.
-    Quickshell.execDetached(["sh", "-c", "umask 077; printf '%s' \"$2\" > \"$1\"", "sh",
-      root.configPath, payload])
+    // Written in-process, never through an argument: a payload on a command
+    // line is readable in /proc for as long as the process lives, and this one
+    // carries the key. The plugin directory is mode 700 and the file 600, so
+    // the file stays private even for the moment before the chmod below.
+    configFile.setText(JSON.stringify(next, null, 2) + "\n")
+    Quickshell.execDetached(["chmod", "600", root.configPath])
   }
 
   function openSettings() {

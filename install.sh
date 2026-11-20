@@ -68,14 +68,15 @@ for file in "${files[@]}"; do
   fi
 done
 
-mkdir -p "$target"
+install -d -m 700 "$target"
 for file in "${files[@]}"; do
   cp -f "$here/$file" "$target/$file"
 done
 
 if [[ ! -f "$target/config.json" ]]; then
-  cp -f "$here/config.example.json" "$target/config.json"
-  chmod 600 "$target/config.json"
+  # 600 from creation, inside a 700 directory: the key is never readable by
+  # another local user, not even for the moment between write and chmod.
+  install -m 600 "$here/config.example.json" "$target/config.json"
   printf 'Created %s/config.json — put your key in it.\n' "$target"
 fi
 

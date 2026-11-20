@@ -323,7 +323,10 @@ function errorFromBody(status, body) {
   } catch (error) {
     detail = ""
   }
-  if (detail === "") detail = String(body || "").slice(0, 160)
+  // The error text is laid out in the panel, so it is bounded here too: a
+  // provider that answers 400 with a megabyte of prose must not reach layout.
+  if (detail === "") detail = String(body || "")
+  if (detail.length > 200) detail = detail.slice(0, 200) + "…"
   if (status === 401 || status === 403) return "Key rejected (" + status + ")"
   if (status === 429) return "Rate limit, try again later (429)"
   if (status === 404) return "Model or address not found (404)"

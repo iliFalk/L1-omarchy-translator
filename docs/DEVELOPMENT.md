@@ -96,22 +96,34 @@ Omarchy machine alone.
 
 ## Security
 
-- `config.json` holds the token. It stays outside this repository, and
-  `install.sh` creates it with an empty key and mode 600.
-- The settings screen writes that file through `sh` with `umask 077`, so the
-  new file is born at 600. A chmod after the write would leave a window at the
-  umask mode.
+- `config.json` holds the token. It stays outside this repository.
+  `install.sh` creates the plugin directory with mode 700 and that file with
+  mode 600 from creation, so no window exists at a looser mode.
+- The settings screen writes the file in-process, never through a command line:
+  a payload in argv is readable in `/proc` for the life of the process, and
+  this one carries the key. A chmod follows the write as a second line.
 - The reply is untrusted text from a third-party endpoint: it is cut at 8000
-  characters before it reaches layout, the clipboard or the history file.
+  characters before it reaches layout, the clipboard or the history file, and a
+  provider error message is cut at 200.
 - The request times out after 20 s. A newer translation aborts the request in
-  flight, and closing the popup cancels it, so no connection is left pending
-  with the token in its header.
+  flight, and closing the popup cancels it.
 - The primary selection and the clipboard are read through
-  `wl-paste | head -c 8192`: the cap applies in the pipe, so an oversized
-  payload never reaches the shell process.
+  `wl-paste | head -c 8192`: the cap applies in the pipe.
+- The plugin exposes one IPC route, `translate <text>`, which takes its text
+  from the caller. No route reads the user's selection, so a local process
+  cannot make the widget pull what is highlighted and send it out.
 - `install.sh` copies files and calls Omarchy commands. It starts no service
   and asks for no privilege beyond the user's own. A removal that fails reports
   the failure instead of printing success.
+
+### Limits that stay
+
+- The response body is buffered whole by the QML `XMLHttpRequest` before the
+  character cap applies; only a streaming client or a proxy can bound it
+  earlier.
+- Qt follows redirects for this request and QML cannot set a redirect policy,
+  so a 30x answered by the configured endpoint sends the request, header
+  included, to wherever it points. Use an `https` endpoint you trust.
 
 ## Update
 
